@@ -1,0 +1,24 @@
+
+RewriteEngine On
+
+#  CORS Headers (สำคัญ!)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "http://localhost:3000"
+    Header set Access-Control-Allow-Methods "POST, GET, OPTIONS" 
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule> 
+
+#  Rewrite Rules  (ส่วนนี้ปรับแต่งตามโครงสร้าง project ของคุณ) 
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L] 
+
+Options -MultiViews
+
+# Allow direct access to PHP files
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !\.php$
+RewriteRule ^ index.html [QSA,L]
+
+# Ensure PHP files are handled by PHP
+AddHandler application/x-httpd-php .php

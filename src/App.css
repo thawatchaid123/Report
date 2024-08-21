@@ -1,0 +1,72 @@
+/* app-section & app-container */
+.app-section {
+  padding: 2rem;  /* เพิ่ม padding  */
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 0 auto; 
+  padding: 0 1rem; 
+}
+
+/* app-grid */
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));  /* ปรับขนาด grid item  */
+  gap: 1.5rem;  /* เพิ่ม gap  */
+}
+
+/* ปรับขนาด h1 */
+.app-section .container h1 {
+  text-align: center;
+  font-size: 2rem; 
+  margin-bottom: 1.5rem; /* เพิ่ม margin ล่าง */
+}
+
+/* ปรับ button-container */
+.button-container {
+  display: flex;
+  justify-content: center;
+  position: fixed; 
+  bottom: 0; 
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 0.1rem; 
+  background-color: #2196f3; /* เปลี่ยนสีพื้นหลัง */ 
+}
+
+/* ปรับ submit-button */
+.submit-button {
+  padding: 0.8rem 1.5rem; /* ปรับ padding */
+  font-size: 1rem; 
+  width: 100%;
+  max-width: 600px; 
+  background-color: #28a745;  /* เปลี่ยนสีปุ่ม */
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* เพิ่ม transition */ 
+  
+}
+
+.submit-button:hover {
+  background-color: #218838;  /* เปลี่ยนสีปุ่มตอน hover */ 
+}
+
+/* form div */
+form div {
+  margin-bottom: 1rem; 
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .app-section {
+    padding: 1rem; 
+  }
+
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+}
