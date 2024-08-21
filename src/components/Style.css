@@ -219,4 +219,11 @@ label {
 }
 .tom1 {
   text-align: center; 
+  width: 80%; /* ให้ .tom1 กว้างเต็ม .button-container */
+} 
+
+
+
+.submit-button:hover {
+  transform: translateY(-8px);
 }

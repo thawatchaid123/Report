@@ -275,11 +275,6 @@ const ReportForm = ({ onSubmit }) => {
         </LoadScript>
       </div>
 
-
-
-
-
-
       <div className="button-container">
         <div className="tom1">
           <label>เบอร์โทรศัพท์</label>
@@ -294,7 +289,7 @@ const ReportForm = ({ onSubmit }) => {
           <button type="submit" className="submit-button">
             ยืนยัน
           </button>
-        </div>
+        </div>       
       </div>
     </form>
   );
