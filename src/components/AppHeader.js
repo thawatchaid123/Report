@@ -19,7 +19,7 @@ function AppHeader() {
             <nav className={`header-nav ${isMenuOpen ? 'show' : ''}`}> 
               
             <div className="header-center">
-                <Link to="/">หน้าแรก</Link>
+                <Link to="/">เเจ้งเหตุ</Link>
             </div>
             
         <ul>

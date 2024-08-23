@@ -6,6 +6,7 @@ import ReportForm from './components/ReportForm';
 import { Route, Routes } from 'react-router-dom';
 import Login from "./components/Login"; 
 import axios from 'axios';
+import Footer from "./components/Footer";
 
 function App() {
   const [reports, setReports] = useState([]);
@@ -41,8 +42,9 @@ function App() {
       <AppHeader />
       <section className="app-section">
         <div className="container">
-          <h1>แจ้งเหตุ</h1>
-          <h1>ยินดีต้อนรับสู่เว็บไซต์ร้องเรียน</h1>           
+          <h1>ยินดีต้อนรับสู่เว็บไซต์ร้องเรียน</h1>
+          <p>ประชาชนทั่วไปหรือผู้ร้องทุกข์สามารถส่งเรื่องร้องเรียนมาได้ที่นี่</p>           
+          
           <Routes>
             <Route path="/" element={<ReportForm onSubmit={handleReportSubmit} />} />
             <Route path="/result" element={<Result reports={reports} />} /> 
@@ -50,6 +52,7 @@ function App() {
           </Routes>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

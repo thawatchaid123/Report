@@ -86,7 +86,13 @@ const ReportForm = ({ onSubmit }) => {
   const handlePhoneChange = (e) => {
     const inputPhone = e.target.value;
     const numericPhone = inputPhone.replace(/[^0-9]/g, '');
-
+  
+    // ตรวจสอบว่าตัวแรกเป็น 0 หรือไม่
+    if (numericPhone.length === 1 && numericPhone !== '0') {
+      setPhoneError('เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0');
+      return; // หยุดการทำงานหากไม่ใช่ 0
+    }
+  
     if (numericPhone.length > 10) {
       setPhoneError('กรุณากรอกเบอร์โทรศัพท์ไม่เกิน 10 หลัก');
     } else if (numericPhone.length === 10 && !/^0(6|8|9)\d{8}$/.test(numericPhone)) {
@@ -94,10 +100,9 @@ const ReportForm = ({ onSubmit }) => {
     } else {
       setPhoneError(null);
     }
-
+  
     setPhone(numericPhone);
   };
-   
   const categories = [
     {
       name: "สำนักงานตำรวจแห่งชาติ",
@@ -207,7 +212,7 @@ const ReportForm = ({ onSubmit }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div className="tom">
-        <label>เรื่องที่แจ้ง</label>
+        <label>หัวข้อ ร้องเรียน</label>
         <div className="blocks-container">
           {!showSubOptions &&
             categories.map((category) => (
