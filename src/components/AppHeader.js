@@ -13,7 +13,7 @@ function AppHeader() {
     return (
         <header className="app-header">
             <div className="header-left">
-                <img className="app-header-logo" src="/images/logo-project.png" alt="โลโก้ Godzilla" />
+                <img className="app-header-logo" src="/images/ronren.png" alt="โลโก้ Godzilla" />
             </div>
 
             <nav className={`header-nav ${isMenuOpen ? 'show' : ''}`}> 
@@ -24,10 +24,10 @@ function AppHeader() {
             
         <ul>
           <li   className="header-right">
-            <Link to="/result">ตรวจสอบ</Link>
+            <Link style={{color:'white'}} to="/result">ตรวจสอบ</Link>
           </li>
           <li  className="header-rights">
-            <Link to="/login">Login</Link>
+            <Link style={{color:'white'}} to="/login">Login</Link>
           </li>
         </ul>
       </nav>

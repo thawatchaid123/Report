@@ -15,7 +15,7 @@ function App() {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/reports');
+        const response = await axios.get('https://thaiworkation.com/api/reports');
         setReports(response.data);
       } catch (error) {
         console.error('Error fetching reports:', error);
@@ -26,7 +26,7 @@ function App() {
 
   const handleReportSubmit = (newReport) => {
     // ส่งข้อมูลไปยัง Backend
-    axios.post('http://localhost:5000/api/reports', newReport)
+    axios.post('https://thaiworkation.com/api/reports', newReport)
       .then(response => {
         console.log(response.data);
         // อัพเดท state ใน Frontend

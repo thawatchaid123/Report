@@ -12,18 +12,20 @@
 }
 
 .header-center {
-  font-size: 2.5rem; 
+  font-size: 2.5rem;
   color: white;
-  position: absolute; 
+  position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  
+
 }
+
 .header-center a {
   text-decoration: none;
   color: inherit;
 }
+
 .header-nav {
   display: flex;
   align-items: center;
@@ -39,14 +41,21 @@
 }
 
 .header-nav li {
-  margin: 0; /* เอา margin ออก */
+  margin: 0;
+  /* เอา margin ออก */
+}
+
+.header-nav .header-right,
+.header-nav .header-rights {
+  font-size: 1.5rem;
 }
 
 .header-nav a {
   text-decoration: none;
-  color: white;
+  color: rgb(254, 253, 253);
   /* font-size: 2.5rem; */
 }
+
 
 .hamburger-button {
   display: none;
@@ -70,7 +79,8 @@
   }
 
   .header-nav {
-    display: none; /* ซ่อนเมนูเมื่อเป็นหน้าจอเล็ก */
+    display: none;
+    /* ซ่อนเมนูเมื่อเป็นหน้าจอเล็ก */
     position: absolute;
     top: 100%;
     left: 0;
