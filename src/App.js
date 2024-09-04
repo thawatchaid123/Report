@@ -9,28 +9,28 @@ import axios from 'axios';
 import Footer from "./components/Footer";
 
 function App() {
-  const [reports, setReports] = useState([]);
+  const [report, setReport] = useState([]);
 
   // ดึงข้อมูลรายงานเมื่อ component โหลด
   useEffect(() => {
-    const fetchReports = async () => {
+    const fetchReport = async () => {
       try {
-        const response = await axios.get('https://thaiworkation.com/api/reports');
-        setReports(response.data);
+        const response = await axios.get('https://thaiworkation.com/project/ronren/build/api/upload.php') ;
+        setReport(response.data);
       } catch (error) {
-        console.error('Error fetching reports:', error);
+        console.error('Error fetching report:', error);
       }
     };
-    fetchReports();
+    fetchReport();
   }, []);
 
   const handleReportSubmit = (newReport) => {
     // ส่งข้อมูลไปยัง Backend
-    axios.post('https://thaiworkation.com/api/reports', newReport)
-      .then(response => {
+    axios.post('https://thaiworkation.com/project/ronren/build/api/upload.php', newReport)
+    .then(response => {
         console.log(response.data);
         // อัพเดท state ใน Frontend
-        setReports([...reports, newReport]); 
+        setReport([...report, newReport]); 
       })
       .catch(error => {
         console.error('Error submitting report:', error);
@@ -47,7 +47,7 @@ function App() {
           
           <Routes>
             <Route path="/" element={<ReportForm onSubmit={handleReportSubmit} />} />
-            <Route path="/result" element={<Result reports={reports} />} /> 
+            <Route path="/result" element={<Result report={report} />} /> 
             <Route path="/login" element={<Login />} />
           </Routes>
         </div>

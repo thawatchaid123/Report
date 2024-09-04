@@ -64,11 +64,11 @@ function ComplaintForm() {
   );
 }
 
-const Result = ({ reports }) => {
+const Result = ({ report }) => {
   return (
     <div>
       <h3>ผลการกรอกข้อมูล</h3>
-      {reports.map((report, index) => (
+      {report.map((report, index) => (
         <div key={index}>
           <p>เบอร์โทรศัพท์: {report.phone}</p>
           <p>เรื่องที่แจ้ง: {report.issue}</p>
@@ -87,16 +87,16 @@ const Result = ({ reports }) => {
 };
 
 function App() {
-  const [reports, setReports] = useState([]);
+  const [report, setReport] = useState([]);
 
   const handleReportSubmit = (newReport) => {
-    setReports([...reports, newReport]);
+    setReport([...report, newReport]);
   };
 
   return (
     <div className="app">
       <ComplaintForm />
-      <Result reports={reports} />
+      <Result report={report} />
     </div>
   );
 }
