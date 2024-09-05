@@ -36,8 +36,8 @@ const ReportForm = ({ onSubmit }) => {
     for (let i = 0; i < photos.length; i++) {
       formData.append('photos[]', photos[i]);
     }
-    // axios.post('/PO/upload.php', formData,  {
-    axios.post('/upload.php', formData,  {
+    // axios.post('/project/ronren/build/api/upload.ph', formData,  {
+    axios.post('/project/ronren/build/api/upload.ph', formData,  {
       withCredentials: false,  // เปลี่ยนเป็น false
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -60,9 +60,9 @@ const ReportForm = ({ onSubmit }) => {
       }
     });
     try {
-      const response = await axios.post('/upload.php', formData, {
+      const response = await axios.post('/project/ronren/build/api/upload.php', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+            'Content-Type': 'multipart/form-data',
         },
       });
 

@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="row">
           <div className="col-12">
             <div className="copyright-section">
-              <img src="images/ronren.png" alt="Copyright Icon" />
+              <img src="/project/ronren/build/images/ronren.png" alt="Copyright Icon" />
               <p className="copyright-text">เเจ้งเหตุ | สงวนลิขสิทธิ์</p>
             </div>
           </div>
