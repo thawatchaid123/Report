@@ -13,20 +13,12 @@ function App() {
 
   // ดึงข้อมูลรายงานเมื่อ component โหลด
   useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        const response = await axios.get('https://thaiworkation.com/project/ronren/build/api/upload.php') ;
-        setReport(response.data);
-      } catch (error) {
-        console.error('Error fetching report:', error);
-      }
-    };
-    fetchReport();
+    
   }, []);
 
   const handleReportSubmit = (newReport) => {
     // ส่งข้อมูลไปยัง Backend
-    axios.post('https://thaiworkation.com/project/ronren/build/api/upload.php', newReport)
+    axios.post('https://thaiworkation.com/uploadd.php', newReport)
     .then(response => {
         console.log(response.data);
         // อัพเดท state ใน Frontend

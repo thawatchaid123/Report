@@ -4,7 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 //  กำหนด path ของไฟล์ CSS 
-$css_file_path = __DIR__ . '/build/static/css/main.4c1d2d5a.css'; 
+$css_file_path = __DIR__ . '/build/static/css/main.12df57f2.css'; 
 
 //  ตรวจสอบว่าไฟล์มีอยู่จริง
 if (!file_exists($css_file_path)) {

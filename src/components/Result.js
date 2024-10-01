@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-
+import axios from 'axios'; //  อย่าลืม import axios 
 function ComplaintForm() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [searchResults, setSearchResults] = useState([]); //  เก็บผลลัพธ์การค้นหา
 
+  
   const handleChange = (event) => {
     let inputValue = event.target.value;
 
@@ -28,13 +30,30 @@ function ComplaintForm() {
     }
   };
 
-  const handleSubmit = () => {
-    setErrorMessage(""); // รีเซ็ต error message ก่อน
+  const handleSubmit = async () => { 
+    setErrorMessage(""); //  รีเซ็ต error message 
 
     if (!/^(08|09|06)\d{7}$/.test(phoneNumber)) {
       setErrorMessage("เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 08, 09 หรือ 06");
     } else {
-      console.log("เบอร์โทรศัพท์ที่กรอก:", phoneNumber);
+      try {
+        // ประกาศตัวแปร phone_number_without_0 ภายใน try block
+      const phone_number_without_0 = phoneNumber.slice(1); 
+        const response = await axios.post('https://thaiworkation.com/project/ronren/uploadd/search.php', {
+          phone_number: phone_number_without_0 
+        });
+
+        if (response.data.error) {
+          //  แสดง error message จาก Backend
+          setErrorMessage(response.data.error); 
+        } else {
+          //  อัปเดต state searchResults ด้วยผลลัพธ์การค้นหา
+          setSearchResults(response.data.reports); 
+        }
+      } catch (error) {
+        console.error('Error searching reports:', error);
+        setErrorMessage('เกิดข้อผิดพลาดในการค้นหาข้อมูล');
+      }
     }
   };
   return (
@@ -60,22 +79,25 @@ function ComplaintForm() {
       <button onClick={handleSubmit} className="submit-button">
         ยืนยัน
       </button> 
+       {/*  แสดงผลลัพธ์การค้นหา */}
+    <Result searchResults={searchResults} /> 
     </div>
   );
 }
 
-const Result = ({ report }) => {
+const Result = ({ searchResults }) => { 
   return (
     <div>
-      <h3>ผลการกรอกข้อมูล</h3>
-      {report.map((report, index) => (
+      <h3>ผลการค้นหา:</h3>
+      {searchResults.map((report, index) => (
         <div key={index}>
-          <p>เบอร์โทรศัพท์: {report.phone}</p>
-          <p>เรื่องที่แจ้ง: {report.issue}</p>
-          {/* แสดงรูปภาพ */}
-          {report.filename && (
-            <img
-              src={`http://localhost/PO/uploads/${report.filename}`}
+          <p>เบอร์โทรศัพท์: {report.phone_number}</p>
+          <p>เรื่องที่แจ้ง: {report.report}</p>
+          {/*  แสดงรูปภาพ */}
+          {report.image_path && (
+            <img 
+              //  แก้ไข path ให้ถูกต้อง
+              src={`/project/ronren/uploads/${report.image_path}`} 
               alt={`Report ${index + 1}`}
               style={{ maxWidth: '300px', height: 'auto' }}
             />
@@ -87,16 +109,10 @@ const Result = ({ report }) => {
 };
 
 function App() {
-  const [report, setReport] = useState([]);
-
-  const handleReportSubmit = (newReport) => {
-    setReport([...report, newReport]);
-  };
-
   return (
     <div className="app">
       <ComplaintForm />
-      <Result report={report} />
+      {/*  ไม่ต้องใช้ Result ใน App component แล้ว */}
     </div>
   );
 }
