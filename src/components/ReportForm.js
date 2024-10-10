@@ -2,13 +2,16 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import Fuse from "fuse.js";
+// eslint-disable-next-line
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+
 import React, { useState, useRef } from "react";
 import Map from "./Map";
 
 const ReportForm = ({ onSubmit }) => {
   const [phone, setPhone] = useState("");
   const [issue, setIssue] = useState("");
+  const [category, setCategory] = useState(""); // เพิ่ม state สำหรับหมวดหมู่
   const [photos, setPhotos] = useState([]);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [showSubOptions, setShowSubOptions] = useState(false);
@@ -17,7 +20,8 @@ const ReportForm = ({ onSubmit }) => {
   const issueRef = useRef(null);
   const navigate = useNavigate();
 
-  const handlePhotoChange = (e) => {
+
+   const handlePhotoChange = (e) => {
     if (e.target.files.length > 0) {
       setPhotos([...e.target.files]);
       setHasPhoto(true);
@@ -33,46 +37,47 @@ const ReportForm = ({ onSubmit }) => {
     const formData = new FormData();
     formData.append("phone", phone);
     formData.append("issue", issue);
+    formData.append("category", category); // ส่งค่าหมวดหมู่ไปด้วย
 
-
-    
-    for (let i = 0; i < photos.length; i++) {
-      formData.append("photos[]", photos[i]);
-    }
-
-    try {
-      const response = await axios.post('/project/ronren/uploadd.php',formData,
-        {
+      // ส่งรูปภาพไปยัง FormData
+      for (let i = 0; i < photos.length; i++) {
+        formData.append("photos[]", photos[i]);
+      }
+  
+      try {
+        const response = await axios.post('/project/ronren/uploadd.php', formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
+        });
+
+        console.log("Server response:", response.data);
+        if (response.data.error) {
+          console.error("Server error:", response.data.error);
+        } else {
+          onSubmit(response.data); // ส่ง response ไปยัง App.js
+          // รีเซ็ตฟอร์ม
+          setPhone("");
+          // setIssue("");
+          setPhotos([]);
+          setHasPhoto(false);
+          setCategory(""); // รีเซ็ตค่าหมวดหมู่
+          // ไปยังหน้า Result
+          navigate("/complaintform");
         }
-      );
-      console.log("Server response:", response.data);
-      if (response.data.error) {
-        console.error("Server error:", response.data.error);
-      } else {
-        onSubmit(response.data);
-        // รีเซ็ตฟอร์ม
-        setPhone("");
-        setIssue("");
-        setPhotos([]);
-        setHasPhoto(false);
-        // ไปยังหน้า Result
-        navigate("/result");
+      } catch (error) {
+        console.error("Error:", error);
       }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
+    };
+
+
   const handlePhoneChange = (e) => {
     const inputPhone = e.target.value;
     const numericPhone = inputPhone.replace(/[^0-9]/g, "");
 
-    // ตรวจสอบว่าตัวแรกเป็น 0 หรือไม่
     if (numericPhone.length === 1 && numericPhone !== "0") {
       setPhoneError("เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0");
-      return; // หยุดการทำงานหากไม่ใช่ 0
+      return;
     }
 
     if (numericPhone.length > 10) {
@@ -205,6 +210,7 @@ const ReportForm = ({ onSubmit }) => {
       ],
     },
   ];
+
   // สร้าง Fuse.js index สำหรับ categories และ subOptions
   const fuseOptions = {
     keys: ["name", "subOptions"],
@@ -213,7 +219,7 @@ const ReportForm = ({ onSubmit }) => {
   const fuseIndex = Fuse.createIndex(fuseOptions.keys, categories);
   const fuse = new Fuse(categories, fuseOptions, fuseIndex);
 
-  const handleIssueChange = (e) => {
+ const handleIssueChange = (e) => {
     const inputText = e.target.value;
     setIssue(inputText);
 
@@ -258,6 +264,7 @@ const ReportForm = ({ onSubmit }) => {
     setIssue(`${selectedCategory.name} - ${subOption}`);
     setShowSubOptions(false);
   };
+  // eslint-disable-next-line
   const [markerPosition, setMarkerPosition] = useState({
     lat: 13.7563, // latitude เริ่มต้น
     lng: 100.5018, // longitude เริ่มต้น
@@ -323,19 +330,7 @@ const ReportForm = ({ onSubmit }) => {
 
       <div className="tom">
         <label>สถานที่</label>
-        {/* <LoadScript googleMapsApiKey="AIzaSyAka-ib6oCwDyXOKpbVUR6vUFo6EXQk6Rg">
-          <GoogleMap
-            mapContainerStyle={{ height: "400px", width: "100%" }}
-            center={markerPosition}
-            zoom={8}
-          >
-            <Marker
-              position={markerPosition}
-              draggable={true}
-              onDragEnd={handleMarkerDragEnd}
-            />
-          </GoogleMap>
-        </LoadScript> */}
+       
         <Map />
       </div>
 
@@ -354,14 +349,14 @@ const ReportForm = ({ onSubmit }) => {
           {phoneError && <div className="error">{phoneError}</div>}
                {/*  เพิ่ม input สำหรับ issue */}
       <div className="tom1">
-        <label>Issue:</label>
+        {/* <label>Issue:</label>
         <input 
           type="text" 
           name="issue" 
           value={issue} 
           onChange={(e) => setIssue(e.target.value)} 
           required 
-        />
+        /> */}
       </div>
           <button type="submit" className="submit-button">
             ยืนยัน

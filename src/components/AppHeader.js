@@ -24,16 +24,17 @@ function AppHeader() {
             
         <ul>
           <li   className="header-right">
-            <Link style={{color:'white'}} to="/result">ตรวจสอบ</Link>
+          <Link style={{color:'white'}} to="/complaintform">ตรวจสอบ</Link>
           </li>
           <li  className="header-rights">
             <Link style={{color:'white'}} to="/login">Login</Link>
           </li>
+
         </ul>
       </nav>
       <button className="hamburger-button" onClick={toggleMenu}>
        
-        {/* <i className={`fas ${isMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>  */}
+       
         <i className="fa-solid fa-bars"></i>
       </button>
         </header>
