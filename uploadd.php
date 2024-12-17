@@ -3,84 +3,75 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// สร้างการเชื่อมต่อฐานข้อมูล
-$mysqli = new mysqli("localhost", "arm2024_ronren", "123456789", "arm2024_ronren");
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "reportss";
 
-// ตรวจสอบการเชื่อมต่อ
-if ($mysqli->connect_error) {
-    die("Connection failed: " . $mysqli->connect_error);
-}
-
-// ตั้งค่าการเชื่อมต่อให้ใช้ UTF-8
+$mysqli = new mysqli($servername, $username, $password, $dbname);
 $mysqli->set_charset("utf8mb4");
 
-// ตรวจสอบว่าเป็น POST request หรือไม่
+if ($mysqli->connect_error) {
+    die(json_encode(['error' => "Connection failed: " . $mysqli->connect_error]));
+}
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST["phone"], $_POST["issue"], $_FILES["photos"]) &&
-!empty($_POST["phone"]) && !empty($_POST["issue"])) {
+    if (isset($_POST["phone"], $_POST["issue"], $_POST["category"]) && 
+        !empty($_POST["phone"]) && !empty($_POST["issue"])) {
 
-        $phone = $_POST["phone"];
-        $issue = $_POST["issue"];
-        $imagePaths = []; // เก็บเส้นทางของรูปภาพ
+        $phone = $mysqli->real_escape_string($_POST["phone"]); // ป้องกัน SQL injection
+        $issue = $mysqli->real_escape_string($_POST["issue"]); // ป้องกัน SQL injection
+        $category = $mysqli->real_escape_string($_POST["category"]); // ป้องกัน SQL injection
+        $imagePaths = [];
 
-        // อัปโหลดรูปภาพ
-        $targetDir = "uploads/"; 
-        foreach ($_FILES['photos']['tmp_name'] as $key => $tmp_name) {
-            $fileName = $_FILES['photos']['name'][$key];
-            $targetFile = $targetDir . basename($fileName);
-            $uploadOk = 1;
-            $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+        $targetDir = "uploads/"; // ตรวจสอบว่าโฟลเดอร์นี้มีอยู่และสามารถเขียนได้
+        if (!is_dir($targetDir)) { mkdir($targetDir, 0777, true); } // สร้างโฟลเดอร์ถ้าไม่มี
 
-            // ตรวจสอบว่าไฟล์เป็นรูปภาพ
-            $check = getimagesize($tmp_name);
-            if ($check === false) {
-                echo json_encode(['error' => 'File is not an image']);
-                exit;
-            }
+        if (!empty($_FILES['photos']['name'])) { // ตรวจสอบว่ามีไฟล์อัปโหลด
+            foreach ($_FILES['photos']['tmp_name'] as $key => $tmp_name) {
+                $originalFileName = $_FILES['photos']['name'][$key];
+                $fileName = uniqid() . "_" . $originalFileName; // เปลี่ยนชื่อไฟล์เพื่อป้องกันการเขียนทับ
+                $targetFile = $targetDir . $fileName;
+                $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
 
-            // ตรวจสอบขนาดไฟล์
-            if ($_FILES["photos"]["size"][$key] > 500000) {
-                echo json_encode(['error' => 'Sorry, your file is too large.']);
-                exit;
-            }
-
-            // ตรวจสอบประเภทไฟล์
-            if (!in_array($imageFileType, ['jpg', 'jpeg', 'png'])) {
-                echo json_encode(['error' => 'Sorry, only JPG, JPEG & PNG files are allowed.']);
-                exit;
-            }
-
-            // อัปโหลดไฟล์
-            if (move_uploaded_file($tmp_name, $targetFile)) {
-                $imagePaths[] = $targetFile; // เก็บ path ของรูปภาพ
-            } else {
-                echo json_encode(['error' => 'Failed to upload image']);
-                exit;
+                if(isset($_POST["submit"]) && $_POST["submit"] === "submit") { // เพิ่มการตรวจสอบเพื่อให้แน่ใจว่าฟอร์มถูกส่งมาจากเว็บไซต์
+                if ($check = getimagesize($tmp_name)) { // ตรวจสอบว่าเป็นไฟล์รูปภาพ
+                    if ($_FILES["photos"]["size"][$key] < 5000000) { // ขนาดไฟล์ไม่เกิน 5 MB
+                        if (in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) { // ประเภทไฟล์ถูกต้อง
+                            if (move_uploaded_file($tmp_name, $targetFile)) {
+                                $imagePaths[] = $targetFile;
+                            } else {
+                                die(json_encode(['error' => 'Failed to upload image']));
+                            }
+                        } else {
+                            die(json_encode(['error' => 'Sorry, only JPG, JPEG, PNG & GIF files are allowed.']));
+                        }
+                    } else {
+                        die(json_encode(['error' => 'Sorry, your file is too large.']));
+                    }
+                } else {
+                    die(json_encode(['error' => 'File is not an image']));
+                }
+                }
             }
         }
 
-        // บันทึกข้อมูลลงในฐานข้อมูล
-        if (!empty($imagePaths)) {
-            $imagePathStr = implode(',', $imagePaths); // แปลง array เป็น string
-            $stmt = $mysqli->prepare("INSERT INTO report (phone_number, report, image_path) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $phone, $issue, $imagePathStr);
 
-            if ($stmt->execute()) {
-                echo json_encode(['success' => 'Data saved successfully']);
-            } else {
-                echo json_encode(['error' => 'Failed to save data: ' . $stmt->error]);
-            }
+        $imagePathStr = implode(',', $imagePaths);
+
+        $stmt = $mysqli->prepare("INSERT INTO reports (phone_number, reports, image_path, category) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $phone, $issue, $imagePathStr, $category);
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => 'Data saved successfully', 'id' => $mysqli->insert_id]); // ส่ง id กลับไปด้วย
         } else {
-            echo json_encode(['error' => 'No images uploaded.']);
+            echo json_encode(['error' => 'Failed to save data: ' . $stmt->error]);
         }
-
-        // ปิด statement
         $stmt->close();
     } else {
         echo json_encode(['error' => 'Missing required fields.']);
     }
 }
-
-// ปิดการเชื่อมต่อ
 $mysqli->close();
 ?>

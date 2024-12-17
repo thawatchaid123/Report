@@ -10,7 +10,7 @@ const Result = () => {
         <div className="result-section">
             <h2>ผลลัพธ์การค้นหา</h2>
             {searchResults.length === 0 ? (
-                <p className="text-red-500">ไม่พบข้อมูลที่ตรงกับหมายเลขโทรศัพท์ที่ค้นหา</p>
+                <p className="text-red-500">ไม่พบข้อมูลที่ตรงกับหมายพนักงานที่ค้นหา</p>
             ) : (
                 <table>
                     <thead>

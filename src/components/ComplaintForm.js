@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios'; // เพิ่มบรรทัดนี้
-import './ComplaintForm.css'; // เชื่อมต่อไฟล์ CSS
+import axios from 'axios';
+import './ComplaintForm.css';
 
 const ComplaintForm = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // ใช้ axios เพื่อส่งข้อมูลแบบ POST
     axios.post('/result.php', { phone_number: phoneNumber })
         .then(response => {
-            // หลังจากส่งข้อมูลสำเร็จ เปลี่ยนเส้นทางไปยังหน้าผลลัพธ์
-            window.location.href = `/project/ronren/result.php?phone_number=${phoneNumber}`; // ใช้ backticks เพื่อให้ ${phoneNumber} ทำงานได้
+            window.location.href = `components/result.php?phone_number=${phoneNumber}`;
         })
         .catch(error => {
             console.error('Error submitting phone number:', error);
@@ -20,9 +18,9 @@ const ComplaintForm = () => {
 
   return (
     <div className="form-container">
-      <h2>กรอกเบอร์โทรศัพท์เพื่อติดตามเรื่องร้องเรียน</h2>
+      <h2>ติดตามสถานะ</h2>
       <form onSubmit={handleSubmit}>
-        <label htmlFor="phone_number">เบอร์โทรศัพท์:</label>
+        <label htmlFor="phone_number">รหัสพนักงาน:</label>
         <input
           type="text"
           id="phone_number"

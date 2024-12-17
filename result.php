@@ -143,11 +143,11 @@
     </nav>
 
     <?php
-    // การตั้งค่าการเชื่อมต่อฐานข้อมูล
-    $servername = "localhost";
-    $username = "arm2024_ronren";
-    $password = "123456789";
-    $dbname = "arm2024_ronren";
+// ข้อมูลการเชื่อมต่อฐานข้อมูล
+$servername = "localhost";
+$username = "root";  // หรือ username ที่คุณตั้งไว้ใน phpMyAdmin
+$password = "";      // password ที่คุณตั้งไว้
+$dbname = "reports"; // ต้องตรงกับชื่อ database ในรูป
 
     // สร้างการเชื่อมต่อฐานข้อมูล
     $conn = new mysqli($servername, $username, $password, $dbname);
@@ -192,12 +192,12 @@
             }
             echo "</table>";
         } else {
-            echo "<p>ไม่พบข้อมูลสำหรับเบอร์โทรศัพท์นี้</p>";
+            echo "<p>ไม่พบข้อมูลสำหรับรหัสพนักงาน</p>";
         }
 
         $stmt->close();
     } else {
-        echo "<p>กรุณากรอกเบอร์โทรศัพท์</p>";
+        echo "<p>กรุณากรอกรหัสพนักงาน</p>";
     }
 
     $conn->close();

@@ -3,11 +3,11 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// เชื่อมต่อฐานข้อมูล
+// ข้อมูลการเชื่อมต่อฐานข้อมูล
 $servername = "localhost";
-$username = "arm2024_ronren";
-$password = "123456789";
-$dbname = "arm2024_ronren";
+$username = "root";  // หรือ username ที่คุณตั้งไว้ใน phpMyAdmin
+$password = "";      // password ที่คุณตั้งไว้
+$dbname = "reports"; // ต้องตรงกับชื่อ database ในรูป
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8mb4");

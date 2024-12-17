@@ -2,16 +2,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import Fuse from "fuse.js";
-// eslint-disable-next-line
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
-
 import React, { useState, useRef } from "react";
-import Map from "./Map";
 
 const ReportForm = ({ onSubmit }) => {
   const [phone, setPhone] = useState("");
   const [issue, setIssue] = useState("");
-  const [category, setCategory] = useState(""); // เพิ่ม state สำหรับหมวดหมู่
+  const [category, setCategory] = useState(""); 
   const [photos, setPhotos] = useState([]);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [showSubOptions, setShowSubOptions] = useState(false);
@@ -20,8 +16,7 @@ const ReportForm = ({ onSubmit }) => {
   const issueRef = useRef(null);
   const navigate = useNavigate();
 
-
-   const handlePhotoChange = (e) => {
+  const handlePhotoChange = (e) => {
     if (e.target.files.length > 0) {
       setPhotos([...e.target.files]);
       setHasPhoto(true);
@@ -33,43 +28,37 @@ const ReportForm = ({ onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const formData = new FormData();
     formData.append("phone", phone);
     formData.append("issue", issue);
-    formData.append("category", category); // ส่งค่าหมวดหมู่ไปด้วย
+    formData.append("category", category);
 
-      // ส่งรูปภาพไปยัง FormData
-      for (let i = 0; i < photos.length; i++) {
-        formData.append("photos[]", photos[i]);
+    for (let i = 0; i < photos.length; i++) {
+      formData.append("photos[]", photos[i]);
+    }
+
+    try {
+      const response = await axios.post('/uploadd.php', formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("Server response:", response.data);
+      if (response.data.error) {
+        console.error("Server error:", response.data.error);
+      } else {
+        onSubmit(response.data); 
+        setPhone("");
+        setPhotos([]);
+        setHasPhoto(false);
+        setCategory("");
+        navigate("/complaintform");
       }
-  
-      try {
-        const response = await axios.post('/project/ronren/uploadd.php', formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
-        console.log("Server response:", response.data);
-        if (response.data.error) {
-          console.error("Server error:", response.data.error);
-        } else {
-          onSubmit(response.data); // ส่ง response ไปยัง App.js
-          // รีเซ็ตฟอร์ม
-          setPhone("");
-          // setIssue("");
-          setPhotos([]);
-          setHasPhoto(false);
-          setCategory(""); // รีเซ็ตค่าหมวดหมู่
-          // ไปยังหน้า Result
-          navigate("/complaintform");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    };
-
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const handlePhoneChange = (e) => {
     const inputPhone = e.target.value;
@@ -93,125 +82,94 @@ const ReportForm = ({ onSubmit }) => {
 
     setPhone(numericPhone);
   };
+
   const categories = [
     {
-      name: "ตำรวจ",
+      name: "เครื่องจักรกลึง",
       subOptions: [
-        "ถูกข่มขู่คุกคาม",
-        "ถูกหมิ่นประมาท",
-        "ถูกทำร้ายร่างกาย",
-        "ถูกขโมยทรัพย์สิน",
-        "ปัญหาเสียงดังรบกวน",
-        "มั่วสุมดื่มสุราในที่สาธารณะ",
-        "พรากผู้เยาว์",
-        "ขายบริการ",
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
       ],
     },
     {
-      name: "ไฟฟ้า",
+      name: "เครื่องจักรฝน",
       subOptions: [
-        "ไฟดับ",
-        "ไฟฟ้าตก",
-        "สายไฟพันกัน",
-        "สายไฟฟ้าขาด/ชำรุด/ร่วงหล่นพันกัน",
-        "อุปกรณ์ไฟฟ้าชำรุด",
-        "ต้นไม้/สิ่งปลูกสร้าง ล้ำแนวสายไฟ",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
       ],
     },
     {
-      name: "สิ่งแวดล้อม",
+      name: "เครื่องจักรกัด",
       subOptions: [
-        "ปัญหาขยะและการจัดการขยะ : หน่วยงานที่รับผิดชอบ: องค์การบริหารส่วนท้องถิ่น (อบต. หรือ เทศบาล)  ผักตบสวา",
-        "มลพิษทางอากาศ : กรมควบคุมมลพิษ หรือ องค์การบริหารส่วนท้องถิ่น",
-        "การทิ้งน้ำเสียและการปนเปื้อนของแหล่งน้ำ : กรมควบคุมมลพิษ หรือกรมทรัพยากรน้ำ",
-        "โรงงานอุตสาหกรรม ปล่อยสิ่งปฏิกูลลงในเเม่น้ำ",
-        "เผาขยะ",
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
       ],
     },
     {
-      name: "เส้นทางถนน",
+      name: "เครื่องจักรเจาะ",
       subOptions: [
-        "ถนนเป็นหลุมบ่อ",
-        " แจ้งคนขับรถผิดกม.",
-        "ถนนมีน้ำขัง",
-        "ต้นไม้ล้มขวางทางสัญจร",
+        "D",
+        " D2.",
+        "D3",
+        "D",
       ],
     },
     {
-      name: "สุขภาพ",
+      name: "เครื่องจักรปั๊ม",
       subOptions: [
-        "รอคิวนาน",
-        "การบริการไม่สุขภาพ",
-        "วินิจฉัยโรคผิดพลาด",
-        "ปฏิเสธไม่รับคนไข้ฉุกเฉิน โดยไม่มีเหตุผลอันควร",
-        "บอกให้ไปรักษาที่อื่น ทั้งที่อยู่ในเขตรับผิดชอบ",
-        "รอพบแพทย์หรือนัดผ่าตัดนานเกินสมเหตุผล*ไม่ได้รับความช่วยเหลืออย่างทันท่วงที ทั้งที่มีอาการหนัก",
-        "ถูกเลื่อนนัดโดยไม่มีการแจ้งล่วงหน้า",
+        "G1",
+        "G2",
+        "G3",
+        "G4 ",
+        "G5",
+        "G6",
       ],
     },
     {
-      name: "การศึกษา",
+      name: "เครื่องจักรรอย",
       subOptions: [
-        "การทำโทษนักเรียนรุนเเรงเกินไป",
-        "บุคลากรทำตัวไม่เหมาะสม",
-        "มีการฉ้อโกงภายในระบบการศึกษา",
+        "H1",
+        "H2",
+        "H3",
+        "H4",
       ],
     },
     {
-      name: "แรงงาน",
+      name: "เครื่องจักรประกอบอัตโนมัติ",
       subOptions: [
-        "นายจ้างไม่ทำตามสัญญาจ้าง",
-        "นายจ้างหักค่าจ้างโดยไม่เป็นธรรม",
-        "นายจ้างไม่จัดให้มีสภาพแวดล้อมในการทำงานที่ปลอดภัย",
+        "Q1",
+        "Q2",
+        "Q3  ",
+        "Q4",
+        "Q5",
+        "Q6",
+        "Q7",
       ],
     },
     {
-      name: "การเดินทาง",
+      name: "เครื่องจักรบรรจุภัณฑ์",
       subOptions: [
-        "เรียกแท็กซีไม่จอดเเละไม่ยอมกดมิเตอร์",
-        "พนักงานขับรถไม่สุขภาพ",
-        "รถประจำทางมาช้ากว่ากำหนด",
-        "พนักงานบริการไม่สุขภาพ",
-      ],
-    },
-    {
-      name: "กฎหมาย",
-      subOptions: [
-        "การถูกโกง",
-        "การคุกคาม",
-        "ปัญหาทางสัญญา  ",
-        "ปัญหาเกี่ยวกับทรัพย์สิน",
-        "ปัญหาครอบครัว",
-        "ปัญหาผู้บริโภค",
-        "ปัญหาอาญา",
-      ],
-    },
-    {
-      name: "สินค้าและบริการ",
-      subOptions: [
-        "สินค้าหมดอายุ",
-        "สินค้าปลอม",
-        "การขายสินค้าเกินราคาจริง",
-        "ยาและอาหารไม่มี (อย.)",
-      ],
-    },
-    {
-      name: "ขอความช่วยเหลือ",
-      subOptions: ["หลงทาง", "รถเสีย", "สัตว์เลี้ยงหาย  เเมว หมา ", "ของหาย"],
-    },
-    {
-      name: "สารเสพติด",
-      subOptions: [
-        "เจอสารเสพติด",
-        "การซื้อขาย ลำเลียง ผลิต หรือครอบครองยาเสพติดทุกชนิด",
-        "พฤติกรรมน่าสงสัยที่เชื่อว่าเกี่ยวข้องกับยาเสพติด ",
-        "ข้อมูลเกี่ยวกับบุคคลที่เกี่ยวข้องกับยาเสพติด เช่น ผู้ค้า ผู้เสพ ผู้ผลิต",
-        "เว็บไซต์ หรือช่องทางออนไลน์ที่ขายยาเสพติด",
+        "W1",
+        "W2",
+        "W3",
+        "W4 ",
       ],
     },
   ];
 
-  // สร้าง Fuse.js index สำหรับ categories และ subOptions
   const fuseOptions = {
     keys: ["name", "subOptions"],
     threshold: 0.4,
@@ -219,26 +177,19 @@ const ReportForm = ({ onSubmit }) => {
   const fuseIndex = Fuse.createIndex(fuseOptions.keys, categories);
   const fuse = new Fuse(categories, fuseOptions, fuseIndex);
 
- const handleIssueChange = (e) => {
+  const handleIssueChange = (e) => {
     const inputText = e.target.value;
     setIssue(inputText);
 
     if (inputText.length >= 2) {
-      // ตรวจสอบความยาวของข้อความ
-      // แยกคำค้นหา
       const searchTerms = inputText.trim().split(/\s+/);
-
-      // ค้นหาคำที่ใกล้เคียงสำหรับแต่ละคำ
       const searchResults = searchTerms.map((term) => fuse.search(term));
-
-      // หา intersection ของผลลัพธ์
       const results = searchResults.reduce((a, b) =>
         a.filter((itemA) =>
           b.some((itemB) => itemA.item.name === itemB.item.name)
         )
       );
 
-      // แสดงผลลัพธ์
       if (results.length > 0) {
         setShowSubOptions(true);
         setSelectedCategory({
@@ -250,11 +201,11 @@ const ReportForm = ({ onSubmit }) => {
         setSelectedCategory(null);
       }
     } else if (inputText.length === 0) {
-      // รีเซ็ตผลลัพธ์เมื่อลบข้อความทั้งหมด
       setShowSubOptions(false);
       setSelectedCategory(null);
     }
   };
+
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
     setShowSubOptions(true);
@@ -264,21 +215,11 @@ const ReportForm = ({ onSubmit }) => {
     setIssue(`${selectedCategory.name} - ${subOption}`);
     setShowSubOptions(false);
   };
-  // eslint-disable-next-line
-  const [markerPosition, setMarkerPosition] = useState({
-    lat: 13.7563, // latitude เริ่มต้น
-    lng: 100.5018, // longitude เริ่มต้น
-  });
-  const handleMarkerDragEnd = (e) => {
-    setMarkerPosition({
-      lat: e.latLng.lat(),
-      lng: e.latLng.lng(),
-    });
-  };
+
   return (
     <form onSubmit={handleSubmit}>
       <div className="tom">
-        <label>หัวข้อ ร้องเรียน</label>
+        <label>หมวดหมู่ เครื่องจักร</label>
         <div className="blocks-container">
           {!showSubOptions &&
             categories.map((category) => (
@@ -303,7 +244,7 @@ const ReportForm = ({ onSubmit }) => {
 
         <div className="input-with-attachment">
           <textarea
-            ref={issueRef} // ใช้ issueRef ที่นี่
+            ref={issueRef} 
             value={issue}
             onChange={handleIssueChange}
             required
@@ -321,43 +262,26 @@ const ReportForm = ({ onSubmit }) => {
               onChange={handlePhotoChange}
               className="file-input"
               multiple
-              style={{ display: "none" }} // ซ่อน input file
+              style={{ display: "none" }} 
             />
             {hasPhoto && <i className="fas fa-check photo-attached-icon"></i>}
           </label>
         </div>
       </div>
 
-      <div className="tom">
-        <label>สถานที่</label>
-       
-        <Map />
-      </div>
 
       <div className="button-container">
         <div className="tom1">
-          <label>เบอร์โทรศัพท์</label>
-           {/* เพิ่ม name="phone" ใน input */}
-           <input
-          type="text"
-          name="phone"  
-          value={phone}
-          onChange={handlePhoneChange}
-          required
-          className="large-inputs"
-        />
+          <label>หมายเลขพนักงาน</label>
+          <input
+            type="text"
+            name="phone"  
+            value={phone}
+            onChange={handlePhoneChange}
+            required
+            className="large-inputs"
+          />
           {phoneError && <div className="error">{phoneError}</div>}
-               {/*  เพิ่ม input สำหรับ issue */}
-      <div className="tom1">
-        {/* <label>Issue:</label>
-        <input 
-          type="text" 
-          name="issue" 
-          value={issue} 
-          onChange={(e) => setIssue(e.target.value)} 
-          required 
-        /> */}
-      </div>
           <button type="submit" className="submit-button">
             ยืนยัน
           </button>
@@ -366,6 +290,7 @@ const ReportForm = ({ onSubmit }) => {
     </form>
   );
 };
+
 function Block({ onClick, text }) {
   return (
     <div className="block" onClick={onClick}>

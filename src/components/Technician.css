@@ -1,0 +1,39 @@
+.Technician {
+    display: flex;
+    justify-content: center; /* จัดกลางแนวนอน */
+    align-items: center; /* จัดกลางแนวตั้ง */
+    min-height: 100vh;
+    font-family: sans-serif;
+  }
+  
+  .block-container {
+    display: flex;
+    flex-direction: column; /* แสดงบล็อกเรียงกันในแนวดิ่ง */
+    gap: 20px; /* ระยะห่างระหว่างบล็อก */
+    width: 60%; /* ความกว้างของ container */
+    max-width: 800px; /* ความกว้างสูงสุด */
+  }
+  
+  .block {
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .block h2 {
+    margin-top: 0; /* ลบ margin ด้านบนของ h2 */
+  }
+  
+  .block p {
+    margin-bottom: 15px;
+  }
+  
+  .block button {
+    background-color: #4CAF50; /* สีเขียว */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
