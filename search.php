@@ -1,81 +1,72 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// ข้อมูลการเชื่อมต่อฐานข้อมูล
-$servername = "localhost";
-$username = "root";  // หรือ username ที่คุณตั้งไว้ใน phpMyAdmin
-$password = "";      // password ที่คุณตั้งไว้
-$dbname = "reports"; // ต้องตรงกับชื่อ database ในรูป
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json; charset=UTF-8");
 
-$conn = new mysqli($servername, $username, $password, $dbname);
-$conn->set_charset("utf8mb4");
+$host = 'localhost';
+$dbname = 'reportss';
+$username = 'root';
+$password = '';
 
-// ตรวจสอบการเชื่อมต่อฐานข้อมูล
-if ($conn->connect_error) {
-    error_log("Connection failed: " . $conn->connect_error);
-    die("Connection failed: " . $conn->connect_error);
-}
+$response = [
+    'success' => false,
+    'error' => '',
+    'reports' => []
+];
 
-// ตรวจสอบว่าเป็น POST request หรือไม่
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['phone_number']) && !empty($_POST['phone_number'])) {
-        $phone_number = $_POST['phone_number'];
-        $sql = "SELECT * FROM report WHERE phone_number = ?";
-        $stmt = $conn->prepare($sql);
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        if (!$stmt) {
-            error_log("Prepare failed: " . $conn->error);
-            $response = ['error' => 'เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL'];
-            header('Content-Type: application/json');
-            echo json_encode($response);
-            exit();
-        }
+    $input = json_decode(file_get_contents('php://input'), true);
 
-        $stmt->bind_param("s", $phone_number);
-
-        if ($stmt->execute()) {
-            $result = $stmt->get_result();
-            $reports = [];
-
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $imagePaths = explode(',', $row['image_path']);
-                    $reports[] = [
-                        'phone_number' => $row['phone_number'],
-                        'report' => $row['report'],
-                        'image_path' => $imagePaths // ส่ง array ของ image_path
-                    ];
-                }
-
-                $response = ["reports" => $reports];
-                header('Content-Type: application/json');
-                echo json_encode($response);
-                exit();
-            } else {
-                // ส่งข้อมูลเมื่อไม่พบข้อมูล
-                $response = ['error' => 'ไม่พบข้อมูล'];
-                header('Content-Type: application/json');
-                echo json_encode($response);
-                exit();
-            }
-        } else {
-            error_log("Execute failed: " . $stmt->error);
-            $response = ['error' => 'เกิดข้อผิดพลาดในการค้นหาข้อมูล'];
-            header('Content-Type: application/json');
-            echo json_encode($response);
-            exit();
-        }
-
-        $stmt->close();
-    } else {
-        $response = ['error' => 'เบอร์โทรศัพท์ไม่ถูกต้อง'];
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit();
+    if (!isset($input['employee_id']) || empty($input['employee_id'])) {
+        throw new Exception('กรุณาระบุรหัสพนักงาน');
     }
+
+    $employee_id = htmlspecialchars(trim($input['employee_id']));
+
+    $stmt = $pdo->prepare("
+        SELECT 
+            id,
+            employee_id, 
+            reports, 
+            image_path,
+            category,
+            `status`,
+            created_at,
+            updated_at
+        FROM 
+            reports 
+        WHERE 
+            employee_id = :employee_id
+        ORDER BY 
+            created_at DESC
+    ");
+    
+    $stmt->execute(['employee_id' => $employee_id]);
+    $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($reports)) {
+        throw new Exception('ไม่พบข้อมูล');
+    }
+
+    $response['success'] = true;
+    $response['reports'] = array_map(function($report) {
+        // แปลงข้อมูล BLOB เป็น base64
+        if (!empty($report['image_path'])) {
+            $report['image_path'] = 'data:image/jpeg;base64,' . base64_encode($report['image_path']);
+        }
+        return $report;
+    }, $reports);
+
+} catch (Exception $e) { 
+    $response['error'] = $e->getMessage();
 }
 
-$conn->close();
-?>
+echo json_encode($response);
+exit();

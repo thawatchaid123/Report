@@ -37,3 +37,21 @@ button {
 button:hover {
   background-color: #45a049;
 }
+.status-pending {
+  color: #2ecc71; /* สีเขียว สำหรับ "รอดำเนินการ" */
+  font-weight: bold;
+}
+
+.status-in_progress {
+  color: #f39c12; /* สีเหลือง สำหรับ "เข้ารับการซ่อมแล้ว" */
+  font-weight: bold;
+}
+
+.status-completed {
+  color: #3498db; /* สีฟ้า สำหรับ "ดำเนินการเสร็จสิ้น" */
+  font-weight: bold;
+}
+.status-rejected {
+  color: #e74c3c; /* สีแดง สำหรับ "ปฏิเสธการซ่อม" */
+  font-weight: bold;
+}

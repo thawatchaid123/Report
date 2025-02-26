@@ -1,74 +1,123 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Login.module.css';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null); 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        setIsLoading(true);
 
-    try {
-      // ส่งข้อมูลไปยัง backend เพื่อยืนยันการเข้าสู่ระบบ
-      const response = await fetch('/api/login', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+        const requestData = {
+            username: username.trim(),
+            password: password
+        };
+        
+        console.log('Sending data:', requestData);
 
-      if (response.ok) {
-        // เข้าสู่ระบบสำเร็จ
-        console.log('เข้าสู่ระบบสำเร็จ!');
-        // รีไดเร็กไปยังหน้าหลักหรือหน้าอื่นๆ
-      } else {
-        // เข้าสู่ระบบไม่สำเร็จ
-        const errorData = await response.json();
-        setError(errorData.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
-      }
+        try {
+            const response = await fetch('/PO/login.php', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
 
-    } catch (err) {
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-      console.error("Error:", err);
-    }
-  };
+            // Check content-type
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error('Invalid response format: Expected JSON');
+            }
 
-  return (
-    <div className={styles.container}>
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <h2 className={styles.title}>เข้าสู่ระบบ</h2>
+            const text = await response.text();
+            console.log('Raw response:', text);
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (error) {
+                console.error('JSON parse error:', error);
+                throw new Error('Invalid JSON response');
+            }
 
-        {error && <div className={styles.error}>{error}</div>}
+            if (data.status === 'success' && data.user) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Redirect based on user type
+                switch (data.user.user_type) {
+                    case 'employee':
+                        navigate('/employee-dashboard');
+                        break;
+                    case 'technician':
+                        navigate('/technician-dashboard');
+                        break;
+                    case 'admin':
+                        navigate('/app');
+                        break;
+                    default:
+                        throw new Error('Invalid user type');
+                }
+            } else {
+                throw new Error(data.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+            }
+        } catch (err) {
+            console.error('Error:', err);
+            setError(`เกิดข้อผิดพลาด: ${err.message}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        <div className={styles.inputGroup}>
-          <label htmlFor="username" className={styles.label}>ชื่อผู้ใช้:</label>
-          <input 
-            type="text" 
-            id="username" 
-            className={styles.input} 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            required 
-          />
+    return (
+        <div className={styles.loginContainer}>
+            <form onSubmit={handleSubmit} className={styles.loginForm}>
+                <h2>เข้าสู่ระบบ</h2>
+                
+                {error && (
+                    <div className={styles.error}>{error}</div>
+                )}
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="username">อีเมล:</label>
+                    <input
+                        type="email"
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                    />
+                </div>
+
+                <div className={styles.formGroup}>
+                    <label htmlFor="password">รหัสผ่าน:</label>
+                    <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                </div>
+
+                <button 
+                    type="submit" 
+                    className={styles.loginButton}
+                    disabled={isLoading}
+                >
+                    {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+                </button>
+            </form>
         </div>
-
-        <div className={styles.inputGroup}>
-          <label htmlFor="password" className={styles.label}>รหัสผ่าน:</label>
-          <input 
-            type="password" 
-            id="password" 
-            className={styles.input} 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-          />
-        </div>
-
-        <button type="submit" className={styles.button}>เข้าสู่ระบบ</button>
-      </form>
-    </div>
-  );
+    );
 };
 
 export default Login;

@@ -68,7 +68,7 @@ function Edit() {
             required
           />
         </div>
-        <div className="form-group">
+        {/* <div className="form-group">
           <label htmlFor="address">ที่อยู่:</label>
           <textarea
             id="address"
@@ -76,7 +76,7 @@ function Edit() {
             onChange={(e) => setAddress(e.target.value)}
             required
           />
-        </div>
+        </div> */}
         <button type="submit">บันทึก</button>
       </form>
     </div>

@@ -1,77 +1,177 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "reportss";
+// Database configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASSWORD', '');
+define('DB_NAME', 'reportss');
 
-$mysqli = new mysqli($servername, $username, $password, $dbname);
-$mysqli->set_charset("utf8mb4");
-
-if ($mysqli->connect_error) {
-    die(json_encode(['error' => "Connection failed: " . $mysqli->connect_error]));
-}
-
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST["phone"], $_POST["issue"], $_POST["category"]) && 
-        !empty($_POST["phone"]) && !empty($_POST["issue"])) {
-
-        $phone = $mysqli->real_escape_string($_POST["phone"]); // ป้องกัน SQL injection
-        $issue = $mysqli->real_escape_string($_POST["issue"]); // ป้องกัน SQL injection
-        $category = $mysqli->real_escape_string($_POST["category"]); // ป้องกัน SQL injection
-        $imagePaths = [];
-
-        $targetDir = "uploads/"; // ตรวจสอบว่าโฟลเดอร์นี้มีอยู่และสามารถเขียนได้
-        if (!is_dir($targetDir)) { mkdir($targetDir, 0777, true); } // สร้างโฟลเดอร์ถ้าไม่มี
-
-        if (!empty($_FILES['photos']['name'])) { // ตรวจสอบว่ามีไฟล์อัปโหลด
-            foreach ($_FILES['photos']['tmp_name'] as $key => $tmp_name) {
-                $originalFileName = $_FILES['photos']['name'][$key];
-                $fileName = uniqid() . "_" . $originalFileName; // เปลี่ยนชื่อไฟล์เพื่อป้องกันการเขียนทับ
-                $targetFile = $targetDir . $fileName;
-                $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
-
-                if(isset($_POST["submit"]) && $_POST["submit"] === "submit") { // เพิ่มการตรวจสอบเพื่อให้แน่ใจว่าฟอร์มถูกส่งมาจากเว็บไซต์
-                if ($check = getimagesize($tmp_name)) { // ตรวจสอบว่าเป็นไฟล์รูปภาพ
-                    if ($_FILES["photos"]["size"][$key] < 5000000) { // ขนาดไฟล์ไม่เกิน 5 MB
-                        if (in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) { // ประเภทไฟล์ถูกต้อง
-                            if (move_uploaded_file($tmp_name, $targetFile)) {
-                                $imagePaths[] = $targetFile;
-                            } else {
-                                die(json_encode(['error' => 'Failed to upload image']));
-                            }
-                        } else {
-                            die(json_encode(['error' => 'Sorry, only JPG, JPEG, PNG & GIF files are allowed.']));
-                        }
-                    } else {
-                        die(json_encode(['error' => 'Sorry, your file is too large.']));
-                    }
-                } else {
-                    die(json_encode(['error' => 'File is not an image']));
-                }
-                }
-            }
+function connectDatabase() {
+    try {
+        $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+        if ($mysqli->connect_error) {
+            throw new Exception("การเชื่อมต่อล้มเหลว: " . $mysqli->connect_error);
         }
-
-
-        $imagePathStr = implode(',', $imagePaths);
-
-        $stmt = $mysqli->prepare("INSERT INTO reports (phone_number, reports, image_path, category) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("ssss", $phone, $issue, $imagePathStr, $category);
-
-        if ($stmt->execute()) {
-            echo json_encode(['success' => 'Data saved successfully', 'id' => $mysqli->insert_id]); // ส่ง id กลับไปด้วย
-        } else {
-            echo json_encode(['error' => 'Failed to save data: ' . $stmt->error]);
-        }
-        $stmt->close();
-    } else {
-        echo json_encode(['error' => 'Missing required fields.']);
+        $mysqli->set_charset("utf8mb4");
+        return $mysqli;
+    } catch (Exception $e) {
+        throw new Exception("ไม่สามารถเชื่อมต่อกับฐานข้อมูล: " . $e->getMessage());
     }
 }
-$mysqli->close();
-?>
+
+// แก้ไขฟังก์ชัน getPendingReports เพื่อดึงทุกสถานะและรวม status
+function getPendingReports($mysqli) {
+    $stmt = $mysqli->prepare("SELECT r.*, u.first_name, u.last_name 
+    FROM reports r 
+    JOIN users u ON r.employee_id = u.employee_id 
+    ORDER BY r.created_at DESC"); // ลบ WHERE r.status IN (1, 2) เพื่อดึงทุกสถานะ
+    if (!$stmt) {
+        throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $mysqli->error);
+    }
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $pending_reports = [];
+    
+    while ($row = $result->fetch_assoc()) {
+        $pending_reports[] = [
+            'id' => $row['id'],
+            'employee_name' => $row['first_name'] . ' ' . $row['last_name'],
+            'employee_id' => $row['employee_id'],
+            'issue' => $row['reports'],
+            'category' => $row['category'],
+            'created_at' => $row['created_at'],
+            'status' => $row['status'], // เพิ่มฟิลด์ status กลับมา
+            'image_path' => $row['image_path'] ? base64_encode($row['image_path']) : null
+        ];
+    }
+    
+    $stmt->close();
+    return $pending_reports;
+}
+
+// ฟังก์ชันอื่นๆ คงเดิม
+function validateEmployee($mysqli, $employee_id) {
+    $stmt = $mysqli->prepare("SELECT employee_id FROM users WHERE employee_id = ?");
+    if (!$stmt) {
+        throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $mysqli->error);
+    }
+
+    $stmt->bind_param("s", $employee_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        throw new Exception("ไม่พบรหัสพนักงานในระบบ");
+    }
+    
+    $userRow = $result->fetch_assoc();
+    $stmt->close();
+    return $userRow['employee_id'];
+}
+
+function createReport($mysqli, $employee_id, $issue, $category, $imageData = null) {
+    $status = 1;
+    
+    $stmt = $mysqli->prepare("INSERT INTO reports (employee_id, reports, category, status, image_path) VALUES (?, ?, ?, ?, ?)");
+    if (!$stmt) {
+        throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $mysqli->error);
+    }
+
+    $stmt->bind_param("sssis", $employee_id, $issue, $category, $status, $imageData);
+    if (!$stmt->execute()) {
+        throw new Exception("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $stmt->error);
+    }
+    
+    $report_id = $mysqli->insert_id;
+    $stmt->close();
+    return $report_id;
+}
+
+function getReportDetails($mysqli, $report_id) {
+    $stmt = $mysqli->prepare("SELECT r.*, u.first_name, u.last_name 
+                            FROM reports r 
+                            JOIN users u ON r.employee_id = u.employee_id 
+                            WHERE r.id = ?");
+    if (!$stmt) {
+        throw new Exception("เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL: " . $mysqli->error);
+    }
+
+    $stmt->bind_param("i", $report_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $report = $result->fetch_assoc();
+    $stmt->close();
+    
+    return [
+        'id' => $report['id'],
+        'employee_name' => $report['first_name'] . ' ' . $report['last_name'],
+        'employee_id' => $report['employee_id'],
+        'issue' => $report['reports'],
+        'category' => $report['category'],
+        'created_at' => $report['created_at'],
+        'status' => $report['status'], // เพิ่มฟิลด์ status กลับมา
+        'image_path' => $report['image_path'] ? base64_encode($report['image_path']) : null
+    ];
+}
+
+try {
+    $mysqli = connectDatabase();
+
+    if ($_SERVER["REQUEST_METHOD"] == "GET") {
+        $pending_reports = getPendingReports($mysqli);
+        echo json_encode(['success' => true, 'reports' => $pending_reports]);
+        exit;
+    }
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        if (!isset($_POST["phone"]) || !isset($_POST["issue"]) || !isset($_POST["category"])) {
+            throw new Exception("กรุณากรอกข้อมูลให้ครบถ้วน");
+        }
+
+        $employee_id = $mysqli->real_escape_string($_POST["phone"]);
+        $issue = $mysqli->real_escape_string($_POST["issue"]);
+        $category = $mysqli->real_escape_string($_POST["category"]);
+
+        $mysqli->begin_transaction();
+
+        try {
+            $confirmed_employee_id = validateEmployee($mysqli, $employee_id);
+            
+            $imageData = null;
+            if (isset($_FILES['photos']) && !empty($_FILES['photos']['name'][0])) {
+                $imageData = file_get_contents($_FILES['photos']['tmp_name'][0]);
+            }
+
+            $report_id = createReport($mysqli, $confirmed_employee_id, $issue, $category, $imageData);
+            $report_details = getReportDetails($mysqli, $report_id);
+
+            $mysqli->commit();
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'บันทึกข้อมูลสำเร็จ',
+                'report' => $report_details
+            ]);
+
+        } catch (Exception $e) {
+            $mysqli->rollback();
+            throw $e;
+        }
+    }
+
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+} finally {
+    if (isset($mysqli)) {
+        $mysqli->close();
+    }
+}

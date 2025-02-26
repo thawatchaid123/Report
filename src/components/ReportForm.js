@@ -3,17 +3,43 @@ import axios from "axios";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import Fuse from "fuse.js";
 import React, { useState, useRef } from "react";
+import PropTypes from 'prop-types';
+
+// Block Component
+const Block = ({ onClick, text }) => {
+  return (
+    <div 
+      className="block" 
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyPress={(e) => {
+        if (e.key === 'Enter') {
+          onClick();
+        }
+      }}
+    >
+      {text}
+    </div>
+  );
+};
+
+Block.propTypes = {
+  onClick: PropTypes.func.isRequired,
+  text: PropTypes.string.isRequired
+};
 
 const ReportForm = ({ onSubmit }) => {
   const [phone, setPhone] = useState("");
-  const [issue, setIssue] = useState("");
+  const [report, setReport] = useState("");
   const [category, setCategory] = useState(""); 
   const [photos, setPhotos] = useState([]);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [showSubOptions, setShowSubOptions] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [phoneError, setPhoneError] = useState(null);
-  const issueRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const reportRef = useRef(null);
   const navigate = useNavigate();
 
   const handlePhotoChange = (e) => {
@@ -28,144 +54,159 @@ const ReportForm = ({ onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     const formData = new FormData();
     formData.append("phone", phone);
-    formData.append("issue", issue);
+    formData.append("issue", report);
+    // ใช้ category ที่รวม name และ subOption แล้ว
     formData.append("category", category);
-
-    for (let i = 0; i < photos.length; i++) {
-      formData.append("photos[]", photos[i]);
+    
+    if (photos.length > 0) {
+      photos.forEach((photo) => {
+        formData.append('photos[]', photo);
+      });
     }
 
     try {
-      const response = await axios.post('/uploadd.php', formData, {
+      const response = await axios.post('http://localhost/PO/uploadd.php', formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
-        },
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      console.log("Server response:", response.data);
-      if (response.data.error) {
-        console.error("Server error:", response.data.error);
-      } else {
-        onSubmit(response.data); 
+      if (response.data.success) {
+        if (onSubmit) {
+          onSubmit(response.data);
+        }
         setPhone("");
+        setReport("");
+        setCategory("");
         setPhotos([]);
         setHasPhoto(false);
-        setCategory("");
+        setSelectedCategory(null);
+        setShowSubOptions(false);
+        
+        alert("บันทึกข้อมูลสำเร็จ");
         navigate("/complaintform");
+      } else {
+        alert(response.data.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error submitting form:", error);
+      alert(error.response?.data?.error || "เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handlePhoneChange = (e) => {
-    const inputPhone = e.target.value;
-    const numericPhone = inputPhone.replace(/[^0-9]/g, "");
-
-    if (numericPhone.length === 1 && numericPhone !== "0") {
-      setPhoneError("เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0");
-      return;
-    }
-
-    if (numericPhone.length > 10) {
-      setPhoneError("กรุณากรอกเบอร์โทรศัพท์ไม่เกิน 10 หลัก");
-    } else if (
-      numericPhone.length === 10 &&
-      !/^0(6|8|9)\d{8}$/.test(numericPhone)
-    ) {
-      setPhoneError("กรุณากรอกเบอร์โทรศัพท์ที่ขึ้นต้นด้วย 06 หรือ 08 หรือ 09");
+    const inputValue = e.target.value.replace(/[^A-Za-z0-9]/g, "");
+    if (inputValue.length > 10) {
+      setPhoneError("กรุณากรอกหมายเลขพนักงานไม่เกิน 10 ตัว");
     } else {
       setPhoneError(null);
     }
+    setPhone(inputValue);
+  };
 
-    setPhone(numericPhone);
+  const handleReportChange = (e) => {
+    setReport(e.target.value);
   };
 
   const categories = [
     {
-      name: "เครื่องจักรกลึง",
+      name: "เครื่องผสมและเครื่องกวน (Mixing Machines)",
       subOptions: [
-        "A1",
-        "A2",
-        "A3",
-        "A4",
-        "A5",
-        "A6",
-        "A7",
-        "A8",
+        "IDC0101 Binder Mixer ",
+        "IDC0102 Ceramic Stock ",
+        "IDC0103 Nickel Stock ",
+        "IDC0104 Dual Shaft ",
+        "IDC0117 Mixer ",
+        "IDC0118 Mixer - Ross ",
+        "IDC0119 Mixer - Kady ",
+        "IDC0120 Homogenizer ",
       ],
     },
     {
-      name: "เครื่องจักรฝน",
+      name: "เครื่องบดและกระจายอนุภาค (Milling Machines)",
       subOptions: [
-        "B2",
-        "B3",
-        "B4",
-        "B5",
-        "B6",
-        "B7",
+        "IDC0105 Three Roll Mill ",
+        "IDC0116 Netzsch Mill ",
+        "IDC0106 Planetary Mill ",
+        "IDC0115 DAM APEX Mill ",
+       
       ],
     },
     {
-      name: "เครื่องจักรกัด",
+      name: "เครื่องจักรงานพิมพ์และตัด (Printing & Cutting Machines)",
       subOptions: [
-        "C1",
-        "C2",
-        "C3",
-        "C4",
-        "C5",
+        "IDC0401 PRINTER MACHINE ",
+        "IDC0102 PAD CUTTING MACHINE ",
+        "IDC0102 TTP Disco Dicer ",
+        "IDC0103 Guillotine Cutter ",
+        
       ],
     },
     {
-      name: "เครื่องจักรเจาะ",
+      name: "เครื่องจักรงานบรรจุและขนส่ง (Packaging & Stacking Machines)",
       subOptions: [
-        "D",
-        " D2.",
-        "D3",
-        "D",
+        "IDC0501 HIGH SPEED STACKERS MACHINE ",
+        " IDC1106 TAPE & REEL MACHINE ",
+       
       ],
     },
     {
-      name: "เครื่องจักรปั๊ม",
+      name: "เครื่องจักรให้ความร้อนและเตาเผา (Heating & Sintering Machines)",
       subOptions: [
-        "G1",
-        "G2",
-        "G3",
-        "G4 ",
-        "G5",
-        "G6",
+        "IDC0107 Stripping Hotplate ",
+        "IDC0803 TUNNEL-TYPE SINTERING FURNACE ",
+        "IDC0804 INDUSTRIAL OVEN MACHINE : N2 BO OVEN ",
+        "IDC0805 INDUSTRIAL OVEN MACHINE : GRUENBERG  ",
+        "IDC0901 INDUSTRIAL OVEN MACHINE : KOYO OVEN ",
+        "IDC0903 INDUSTRIAL OVEN MACHINE : EPOXY CURING OVEN ",
+        "IDC1003 INDUSTRIAL OVEN MACHINE : POLISHING DRYING OVEN   ",
+        "IDC1007 INDUSTRIAL OVEN MACHINE : BM Drying Oven   ",
+        "IDC0109 OVEN MACHINE : LOI Oven   ",
+        "IDC0111 Oven - 130degC   ",
+        "IDC0112 Oven - 195degC   ",
+        "IDC0113 Oven - 400degC   ",
+        "IDC0114 Oven - 1000degC   ",
+       
       ],
     },
     {
-      name: "เครื่องจักรรอย",
+      name: "เครื่องขัดเงาและทำความสะอาด (Polishing & Cleaning Machines)",
       subOptions: [
-        "H1",
-        "H2",
-        "H3",
-        "H4",
+        "IDC1001 SAND POLISHER MACHINE ",
+        "IDC1002 ULTRA SONIC TANK ",
+       
       ],
     },
     {
-      name: "เครื่องจักรประกอบอัตโนมัติ",
+      name: "เครื่องจักรสำหรับงานทดสอบและตรวจสอบ (Testing & Inspection Machines)",
       subOptions: [
-        "Q1",
-        "Q2",
-        "Q3  ",
-        "Q4",
-        "Q5",
-        "Q6",
-        "Q7",
+        "IDC1102 MICRO CHIP VISUAL INSPECTION MACHINE ",
+        "IDC1108 ELECTRICAL TESTING MACHINE : ALLEGRO ",
+        "IDC0108 Particle Size Analyzer Horiba Q3  ",
+        "IDC0110 Spectrometer - Perkins Elmer ",
       ],
     },
     {
-      name: "เครื่องจักรบรรจุภัณฑ์",
+      name: "เครื่องจักรสำหรับการแพ็คกิ้งและจัดเรียงชิ้นส่วน (Packaging & Handling Machines)",
       subOptions: [
-        "W1",
-        "W2",
-        "W3",
-        "W4 ",
+        "IDC1106 TAPE & REEL MACHINE ",
+       
+      ],
+    },
+    {
+      name: "เครื่องจักรในสายการผลิตอัตโนมัติ (Automation & Assembly Machines)",
+      subOptions: [
+        "IDC1006 AUTOMATIC CHIPSTAR BARREL LINE   ",
+        "IDC0902 FITO TERM   ",
+       
       ],
     },
   ];
@@ -177,24 +218,17 @@ const ReportForm = ({ onSubmit }) => {
   const fuseIndex = Fuse.createIndex(fuseOptions.keys, categories);
   const fuse = new Fuse(categories, fuseOptions, fuseIndex);
 
-  const handleIssueChange = (e) => {
+  const handleCategorySearch = (e) => {
     const inputText = e.target.value;
-    setIssue(inputText);
+    setCategory(inputText);
 
     if (inputText.length >= 2) {
-      const searchTerms = inputText.trim().split(/\s+/);
-      const searchResults = searchTerms.map((term) => fuse.search(term));
-      const results = searchResults.reduce((a, b) =>
-        a.filter((itemA) =>
-          b.some((itemB) => itemA.item.name === itemB.item.name)
-        )
-      );
-
-      if (results.length > 0) {
+      const searchResults = fuse.search(inputText);
+      if (searchResults.length > 0) {
         setShowSubOptions(true);
         setSelectedCategory({
           name: "ผลลัพธ์การค้นหา",
-          subOptions: results.map((result) => result.item.name),
+          subOptions: searchResults.map((result) => `${result.item.name} - ${result.item.subOptions[0]}`),
         });
       } else {
         setShowSubOptions(false);
@@ -212,24 +246,32 @@ const ReportForm = ({ onSubmit }) => {
   };
 
   const handleSubOptionClick = (subOption) => {
-    setIssue(`${selectedCategory.name} - ${subOption}`);
+    // รวม name และ subOption เข้าด้วยกัน
+    const fullCategory = `${selectedCategory.name} - ${subOption}`;
+    setCategory(fullCategory);
     setShowSubOptions(false);
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <div className="tom">
-        <label>หมวดหมู่ เครื่องจักร</label>
+        <label>หมวดหมู่เครื่องจักร</label>
+        <input
+          type="text"
+          value={category}
+          onChange={handleCategorySearch}
+          placeholder="ค้นหาหรือเลือกหมวดหมู่"
+          className="large-input"
+        />
         <div className="blocks-container">
-          {!showSubOptions &&
-            categories.map((category) => (
-              <Block
-                key={category.name}
-                onClick={() => handleCategoryClick(category)}
-                text={category.name}
-              />
-            ))}
-          {showSubOptions && (
+          {!showSubOptions && categories.map((cat) => (
+            <Block
+              key={cat.name}
+              onClick={() => handleCategoryClick(cat)}
+              text={cat.name}
+            />
+          ))}
+          {showSubOptions && selectedCategory && (
             <div>
               {selectedCategory.subOptions.map((subOption) => (
                 <Block
@@ -242,15 +284,16 @@ const ReportForm = ({ onSubmit }) => {
           )}
         </div>
 
+        <label>รายละเอียดปัญหา</label>
         <div className="input-with-attachment">
           <textarea
-            ref={issueRef} 
-            value={issue}
-            onChange={handleIssueChange}
+            ref={reportRef}
+            value={report}
+            onChange={handleReportChange}
             required
             className="large-input"
             rows="3"
-            placeholder="พิมพ์ข้อความและแนบรูปภาพ"
+            placeholder="กรุณากรอกรายละเอียดปัญหาและแนบรูปภาพ (ถ้ามี)"
           />
           <label
             className="file-attachment-label"
@@ -260,30 +303,34 @@ const ReportForm = ({ onSubmit }) => {
             <input
               type="file"
               onChange={handlePhotoChange}
+              accept="image/*"
               className="file-input"
               multiple
-              style={{ display: "none" }} 
+              style={{ display: "none" }}
             />
             {hasPhoto && <i className="fas fa-check photo-attached-icon"></i>}
           </label>
         </div>
       </div>
 
-
       <div className="button-container">
         <div className="tom1">
-          <label>หมายเลขพนักงาน</label>
+          <label>รหัสพนักงาน</label>
           <input
             type="text"
-            name="phone"  
+            name="employee_id"
             value={phone}
             onChange={handlePhoneChange}
             required
             className="large-inputs"
           />
           {phoneError && <div className="error">{phoneError}</div>}
-          <button type="submit" className="submit-button">
-            ยืนยัน
+          <button 
+            type="submit" 
+            className="submit-button"
+            disabled={isSubmitting || phoneError}
+          >
+            {isSubmitting ? 'กำลังส่งข้อมูล...' : 'ยืนยัน'}
           </button>
         </div>
       </div>
@@ -291,12 +338,8 @@ const ReportForm = ({ onSubmit }) => {
   );
 };
 
-function Block({ onClick, text }) {
-  return (
-    <div className="block" onClick={onClick}>
-      {text}
-    </div>
-  );
-}
+ReportForm.propTypes = {
+  onSubmit: PropTypes.func
+};
 
 export default ReportForm;

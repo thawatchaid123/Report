@@ -13,7 +13,7 @@ function AppHeader() {
     return (
         <header className="app-header">
             <div className="header-left">
-                <img className="app-header-logo" src="/images/po.png" alt="โลโก้ RONREN1" />
+                <img className="app-header-logo" src="/images/T3.png" alt="โลโก้ " />
             </div>
             {/* <div className="header-left">
                 <img className="app-header-logo" src="/project/ronren/build/images/ronren.png" alt="โลโก้ RONREN1" />
@@ -22,7 +22,7 @@ function AppHeader() {
             <nav className={`header-nav ${isMenuOpen ? 'show' : ''}`}> 
               
             <div className="header-center">
-                <Link to="/">เเจ้งเหตุ</Link>
+                <Link to="/">เเจ้งซ่อม</Link>
             </div>
             
         <ul>

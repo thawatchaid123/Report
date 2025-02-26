@@ -57,3 +57,10 @@
   .register-form button:hover {
     background-color: #0069d9; /* สีปุ่มเมื่อวางเมาส์ */
   }
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
